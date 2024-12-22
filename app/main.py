@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -11,13 +10,9 @@ from telegram.ext import Application
 from app.bot import setup_handlers
 from app.scheduler import setup_schedules
 from app.utils.config import settings
+from app.utils.logger import logger
 
 # Configure logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
 TELEGRAM_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 # Global instances
@@ -30,11 +25,8 @@ async def process_updates():
     async with telegram_app:
         while True:
             try:
-                # Get update from the queue
                 update = await telegram_app.update_queue.get()
-                # Process update
                 await telegram_app.process_update(update)
-                # Mark task as done
                 telegram_app.update_queue.task_done()
             except Exception as e:
                 logger.error(f"Error processing update: {e}")
@@ -78,8 +70,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
             logger.info("Update processing task was cancelled")
 
         # Cleanup telegram bot
-        await telegram_app.stop()
-        await telegram_app.shutdown()
+        if telegram_app.running:
+            await telegram_app.stop()
+            await telegram_app.shutdown()
 
 
 # Create FastAPI app with lifespan
@@ -94,5 +87,5 @@ if __name__ == "__main__":
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=False,  # Set to True for development
+        reload=False,
     )
