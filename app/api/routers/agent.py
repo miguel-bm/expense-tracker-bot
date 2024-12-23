@@ -10,8 +10,10 @@ openai = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 @router.post("/agent/response")
-async def get_agent_response(message: str) -> str:
-    logger.info(f"Getting agent response for message: {message}")
+async def get_agent_response(message: str, chat_id: int) -> str:
+    logger.info(
+        f"Getting agent response for message: {message} from chat_id: {chat_id}"
+    )
     completion = await openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[

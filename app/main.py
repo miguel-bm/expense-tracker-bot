@@ -1,14 +1,19 @@
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Awaitable, Callable
 
 import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from openai import AsyncOpenAI
+from starlette.middleware.base import BaseHTTPMiddleware
 from telegram.ext import Application
 
+from app.agent.service import AgentService
 from app.bot import setup_handlers
 from app.scheduler import setup_schedules
+from app.storage.chat.json_chat import JsonChatStorage
+from app.storage.expenses.google_sheets import GSpreadExpenseStorage
 from app.utils.config import settings
 from app.utils.logger import logger
 
@@ -16,8 +21,32 @@ from app.utils.logger import logger
 TELEGRAM_TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 # Global instances
+openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+expense_storage = GSpreadExpenseStorage()
+chat_storage = JsonChatStorage()
+agent_service = AgentService(openai_client, expense_storage, chat_storage)
 scheduler = AsyncIOScheduler()
 telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
+
+# Add global objects to bot data
+telegram_app.bot_data["openai"] = openai_client
+telegram_app.bot_data["expense_storage"] = expense_storage
+telegram_app.bot_data["chat_storage"] = chat_storage
+telegram_app.bot_data["agent_service"] = agent_service
+
+
+# Add this new class
+class StateMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        # Attach global objects to request.state
+        request.state.scheduler = scheduler
+        request.state.telegram_app = telegram_app
+        request.state.expense_storage = expense_storage
+        request.state.openai = openai_client
+        response = await call_next(request)
+        return response
 
 
 async def process_updates():
@@ -77,6 +106,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
 # Create FastAPI app with lifespan
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(StateMiddleware)
 
 setup_handlers(telegram_app)
 setup_schedules(scheduler)

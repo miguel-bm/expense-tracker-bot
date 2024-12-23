@@ -1,0 +1,142 @@
+[
+  {
+    "role": "user",
+    "content": "13,50 eur en Mercadona",
+    "name": "miguelblancomarcos"
+  },
+  {
+    "content": null,
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": [
+      {
+        "id": "call_NS7UpITIjeSEmXBDImmaeYyo",
+        "function": {
+          "arguments": "{\"timestamp\":null,\"sender\":\"miguelblancomarcos\",\"cost\":13.5,\"concept\":\"Compra en Mercadona\",\"category\":[\"Supermercado\"],\"input_method\":\"bot\",\"details\":null,\"payment_method\":null,\"receipt_url\":null,\"tags\":null,\"metadata\":null}",
+          "name": "AddExpense"
+        },
+        "type": "function"
+      }
+    ]
+  },
+  {
+    "content": "Expense created successfully with id 151a2564-4ace-461b-b96d-3343dba295ff",
+    "role": "tool",
+    "tool_call_id": "call_NS7UpITIjeSEmXBDImmaeYyo"
+  },
+  {
+    "content": "He a\u00f1adido con \u00e9xito el gasto de 13,50 EUR en Mercadona a tu base de datos.",
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": null
+  },
+  {
+    "role": "user",
+    "content": "49,87 eur en gasolina",
+    "name": "miguelblancomarcos"
+  },
+  {
+    "content": null,
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": [
+      {
+        "id": "call_07wJ87ZCuWoodPBhugxdynVj",
+        "function": {
+          "arguments": "{\"timestamp\":null,\"sender\":\"miguelblancomarcos\",\"cost\":49.87,\"concept\":\"Gasolina\",\"category\":[\"Transporte\"],\"input_method\":\"bot\",\"details\":null,\"payment_method\":null,\"receipt_url\":null,\"tags\":null,\"metadata\":null}",
+          "name": "AddExpense"
+        },
+        "type": "function"
+      }
+    ]
+  },
+  {
+    "content": "Expense created successfully with id ca9ee18c-6c1c-4824-925a-fd8d655fea88",
+    "role": "tool",
+    "tool_call_id": "call_07wJ87ZCuWoodPBhugxdynVj"
+  },
+  {
+    "content": "He a\u00f1adido con \u00e9xito el gasto de 49,87 EUR en gasolina a tu base de datos.",
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": null
+  },
+  {
+    "role": "user",
+    "content": "30,55 en el recibo de la luz",
+    "name": "miguelblancomarcos"
+  },
+  {
+    "content": null,
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": [
+      {
+        "id": "call_wiZx7Q8h9sE5ICzfhUJnuMxF",
+        "function": {
+          "arguments": "{\"timestamp\":null,\"sender\":\"miguelblancomarcos\",\"cost\":30.55,\"concept\":\"Recibo de la luz\",\"category\":[\"Servicios\"],\"input_method\":\"bot\",\"details\":null,\"payment_method\":null,\"receipt_url\":null,\"tags\":null,\"metadata\":null}",
+          "name": "AddExpense"
+        },
+        "type": "function"
+      }
+    ]
+  },
+  {
+    "content": "Expense created successfully with id 80981532-2c61-4f47-b6b0-0d810edf6c50",
+    "role": "tool",
+    "tool_call_id": "call_wiZx7Q8h9sE5ICzfhUJnuMxF"
+  },
+  {
+    "content": "He a\u00f1adido con \u00e9xito el gasto de 30,55 EUR en el recibo de la luz a tu base de datos.",
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": null
+  },
+  {
+    "role": "user",
+    "content": "45,55 en el beefcious (restaurante)",
+    "name": "miguelblancomarcos"
+  },
+  {
+    "content": null,
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": [
+      {
+        "id": "call_gOsO5a1EMXpAIYLwROnER5EF",
+        "function": {
+          "arguments": "{\"timestamp\":null,\"sender\":\"miguelblancomarcos\",\"cost\":45.55,\"concept\":\"Beefcious (restaurante)\",\"category\":[\"Comida\",\"Restaurante\"],\"input_method\":\"bot\",\"details\":null,\"payment_method\":null,\"receipt_url\":null,\"tags\":null,\"metadata\":null}",
+          "name": "AddExpense"
+        },
+        "type": "function"
+      }
+    ]
+  },
+  {
+    "content": "Expense created successfully with id 07a1f8de-c670-4863-82f0-9ef96f1f7836",
+    "role": "tool",
+    "tool_call_id": "call_gOsO5a1EMXpAIYLwROnER5EF"
+  },
+  {
+    "content": "He a\u00f1adido con \u00e9xito el gasto de 45,55 EUR en el restaurante Beefcious a tu base de datos.",
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": null
+  }
+]
