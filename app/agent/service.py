@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import yaml
 from jinja2 import Template
 from openai import AsyncOpenAI, pydantic_function_tool
 from openai.types.chat.chat_completion_assistant_message_param import (
@@ -19,10 +20,12 @@ from app.agent.tools.add_expense.tool import AddExpense
 from app.agent.tools.base import BaseTool, ResponseContext, get_tool_instance
 from app.storage.chat.base import ChatStorageInterface
 from app.storage.expenses.base import ExpenseStorageInterface
+from app.utils.config import settings
 from app.utils.logger import logger
 
 TOOLS: list[type[BaseTool]] = [AddExpense]
 TOOL_MAP = {str(tool_class.__name__): tool_class for tool_class in TOOLS}
+CATEGORIES_PATH = "categories.yml"
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompt.jinja2"
 SYSTEM_PROMPT_TEMPLATE = Template(SYSTEM_PROMPT_PATH.read_text())
 
@@ -39,14 +42,29 @@ class AgentService:
         self.chat_storage = chat_storage
         self.tool_schemas = [pydantic_function_tool(tool_class) for tool_class in TOOLS]
 
-        logger.info(
-            f"Instantiated agent service with tool schemas: {self.tool_schemas}"
-        )
+    @classmethod
+    def _get_categories_str(
+        cls, categories: dict[str, dict | None], indent: int = 0
+    ) -> list[str]:
+        lines = []
+        for category, subcategories in categories.items():
+            lines.append(f"{indent * '  '}- {category}")
+            if subcategories:
+                lines.extend(cls._get_categories_str(subcategories, indent + 1))
+        return lines
 
     async def _get_system_message(
         self, response_context: ResponseContext
     ) -> ChatCompletionSystemMessageParam:
-        content = SYSTEM_PROMPT_TEMPLATE.render(tools=self.tool_schemas)
+        categories: dict[str, dict | None] = yaml.safe_load(
+            Path(CATEGORIES_PATH).read_text()
+        )
+        categories_str = "\n".join(self._get_categories_str(categories))
+        content = SYSTEM_PROMPT_TEMPLATE.render(
+            language=settings.DEFAULT_LANGUAGE,
+            currency=settings.DEFAULT_CURRENCY,
+            categories=categories_str,
+        )
         return ChatCompletionSystemMessageParam(content=content, role="system")
 
     async def get_text_response(
@@ -70,6 +88,7 @@ class AgentService:
                 messages=[system_message] + messages,
                 tools=self.tool_schemas,
             )
+            logger.info(f"Completion: {completion}")
             completion_message = completion.choices[0].message
             message_param = ChatCompletionAssistantMessageParam(
                 **completion_message.model_dump(mode="json")

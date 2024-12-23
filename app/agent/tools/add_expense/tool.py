@@ -19,9 +19,9 @@ class AddExpense(BaseTool):
     cost: float
     concept: str
     category: list[str]
-    input_method: Literal["manual", "bot", "form"] = "bot"
     details: str | None = None
-    payment_method: str | None = None
+    input_method: Literal["manual", "bot", "form"] = "bot"
+    payment_method: Literal["cash", "card", "transfer"] | None = None
     receipt_url: str | None = None
     tags: list[str] | None = None
     metadata: dict | None = None

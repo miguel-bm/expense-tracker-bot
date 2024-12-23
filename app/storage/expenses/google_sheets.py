@@ -45,7 +45,7 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
             concept=str(record["concept"]),
             category=str(record["category"]).split("/"),
             details=str(record["details"]) or None,
-            payment_method=str(record["payment_method"]) or None,
+            payment_method=str(record["payment_method"]) or None,  # type: ignore
             input_method=str(record["input_method"]),  # type: ignore
             is_recurring=str(record["is_recurring"]) == "TRUE",
             receipt_url=str(record["receipt_url"]) or None,

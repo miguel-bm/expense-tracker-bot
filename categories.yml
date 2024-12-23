@@ -1,0 +1,102 @@
+housing:
+  rent:
+  mortgage:
+  utilities:
+    electricity:
+    gas:
+    water:
+    internet:
+  maintenance:
+  furniture:
+  appliances:
+  services:
+    cleaning:
+    gardening:
+    security:
+    other:
+  insurance:
+  taxes:
+
+transportation:
+  vehicle:
+    payments:
+    fuel:
+    maintenance:
+    insurance:
+    parking:
+    tolls:
+    taxes:
+  subway:
+  bus:
+  train:
+  ride_sharing:
+  airplane:
+
+food:
+  groceries:
+  restaurant:
+  delivery:
+  coffee:
+
+healthcare:
+  insurance:
+  pharmacy:
+  fitness:
+    gym:
+    sports:
+    equipment:
+
+personal_care:
+  haircut:
+  clothing:
+  accessories:
+  cosmetics:
+  hygiene:
+  wellness:
+
+finance:
+  debt:
+  investment:
+  taxes:
+  fees:
+  credit_card:
+
+entertainment:
+  streaming:
+  music:
+  books:
+  movies:
+  events:
+  boardgames:
+  videogames:
+  hobbies:
+
+travel:
+  hotel:
+  rental:
+  activities:
+
+personal_development:
+  education:
+    courses:
+    books:
+  software:
+    ai_tools:
+
+electronics:
+  phone:
+  computer:
+  tablet:
+  audio:
+  others:
+
+gifts:
+  wedding:
+  birthday:
+  christmas:
+  anniversary:
+  other:
+
+donations:
+  charity:
+  crowdfunding:

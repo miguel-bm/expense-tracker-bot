@@ -4,16 +4,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # Telegram
     TELEGRAM_BOT_TOKEN: str
     TELEGRAM_CHAT_ID: int
-
-    # Google Sheets
     GOOGLE_SHEETS_CREDENTIALS: str
     EXPENSES_SHEET_ID: str
-
-    # OpenAI
     OPENAI_API_KEY: str
+    DEFAULT_CURRENCY: str
+    DEFAULT_LANGUAGE: str
 
     model_config = SettingsConfigDict(
         extra="ignore",
