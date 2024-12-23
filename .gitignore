@@ -33,8 +33,12 @@ ENV/
 # Google Sheets
 credentials.json
 
+# Chat history
+chat_history.json
+
 # Logs
 *.log
 
 # Others
 .DS_Store
+
