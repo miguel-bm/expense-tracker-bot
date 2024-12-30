@@ -12,7 +12,7 @@ class Expense(BaseModel):
     concept: str
     category: list[str]
     details: str | None = None
-    payment_method: Literal["cash", "card", "transfer"] | None = None
+    payment_method: Literal["cash", "card", "transfer", "p2p"] | None = None
     input_method: Literal["manual", "bot", "form"] = "bot"
     is_recurring: bool = False
     receipt_url: str | None = None

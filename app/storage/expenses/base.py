@@ -10,7 +10,7 @@ class ExpenseStorageInterface(ABC):
         pass
 
     @abstractmethod
-    async def update_expense(self, expense_id: str, expense: Expense) -> None:
+    async def update_expense(self, expense: Expense) -> None:
         pass
 
     @abstractmethod

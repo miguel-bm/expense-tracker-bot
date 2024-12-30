@@ -30,7 +30,6 @@ def filter_message(func):
         if (
             not update.effective_chat
             or update.effective_chat.id != settings.TELEGRAM_CHAT_ID
-            or not update.message
         ):
             logger.info(f"Skipping message due to filter: {update.message}")
             return

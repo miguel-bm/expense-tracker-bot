@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import List
 
 from gspread.auth import service_account
 
@@ -15,7 +14,8 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
     def __init__(self):
         self._client = service_account(settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE])
         self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
-        self._expenses_worksheet = self._sheet.worksheet("expenses")
+        self._expenses_worksheet = self._sheet.worksheet("movements")
+        self.reload_cache()
 
     @classmethod
     def _expense_to_row(cls, expense: Expense) -> list[str | float | bool]:
@@ -55,9 +55,15 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
             else None,
         )
 
+    def reload_cache(self) -> None:
+        records = self._expenses_worksheet.get_all_records()
+        self._expenses_cache = [self._record_to_expense(record) for record in records]
+
     async def add_expense(self, expense: Expense) -> None:
         row = self._expense_to_row(expense)
         self._expenses_worksheet.append_row(row)
+        if self._expenses_cache:
+            self._expenses_cache.append(expense)
 
     async def update_expense(self, expense: Expense) -> None:
         cell = self._expenses_worksheet.find(expense.expense_id, in_column=1)
@@ -67,7 +73,13 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
         range_name = f"A{cell.row}:N{cell.row}"
         updated_row = self._expense_to_row(expense)
         self._expenses_worksheet.update(range_name=range_name, values=[updated_row])
+        for i, expense in enumerate(self._expenses_cache):
+            if expense.expense_id == expense.expense_id:
+                self._expenses_cache[i] = expense
+                break
 
-    async def get_expenses(self) -> List[Expense]:
-        records = self._expenses_worksheet.get_all_records()
-        return [self._record_to_expense(record) for record in records]
+    async def get_expenses(self, force_reload: bool = False) -> list[Expense]:
+        if not force_reload:
+            return self._expenses_cache
+        self.reload_cache()
+        return self._expenses_cache

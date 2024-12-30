@@ -1,5 +1,7 @@
 import asyncio
+import json
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator, Awaitable, Callable
 
 import uvicorn
@@ -27,12 +29,14 @@ chat_storage = JsonChatStorage()
 agent_service = AgentService(openai_client, expense_storage, chat_storage)
 scheduler = AsyncIOScheduler()
 telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
+user_mapping = json.loads(Path("user_mapping.json").read_text())
 
 # Add global objects to bot data
 telegram_app.bot_data["openai"] = openai_client
 telegram_app.bot_data["expense_storage"] = expense_storage
 telegram_app.bot_data["chat_storage"] = chat_storage
 telegram_app.bot_data["agent_service"] = agent_service
+telegram_app.bot_data["user_mapping"] = user_mapping
 
 
 # Add this new class
@@ -45,6 +49,7 @@ class StateMiddleware(BaseHTTPMiddleware):
         request.state.telegram_app = telegram_app
         request.state.expense_storage = expense_storage
         request.state.openai = openai_client
+        request.state.user_mapping = user_mapping
         response = await call_next(request)
         return response
 

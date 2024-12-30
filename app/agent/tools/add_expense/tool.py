@@ -1,4 +1,4 @@
-import uuid
+import hashlib
 from datetime import datetime, timezone
 from typing import Literal
 
@@ -19,20 +19,29 @@ class AddExpense(BaseTool):
     cost: float
     concept: str
     category: list[str]
+    payment_method: Literal["cash", "card", "transfer", "p2p"]
     details: str | None = None
-    input_method: Literal["manual", "bot", "form"] = "bot"
-    payment_method: Literal["cash", "card", "transfer"] | None = None
     receipt_url: str | None = None
     tags: list[str] | None = None
     metadata: dict | None = None
 
+    def _generate_expense_id(self, expense_timestamp: datetime) -> str:
+        fields_to_hash = (
+            expense_timestamp.isoformat(),
+            str(self.cost),
+            str(self.concept),
+            str(self.category),
+            str(self.payment_method),
+        )
+        return hashlib.sha256(";".join(fields_to_hash).encode()).hexdigest()[:8]
+
     async def call(self, response_context: ResponseContext) -> str:
-        expense_id = str(uuid.uuid4())
         expense_timestamp = (
             datetime.fromisoformat(self.timestamp)
             if self.timestamp
             else datetime.now(timezone.utc)
         )
+        expense_id = self._generate_expense_id(expense_timestamp)
         expense = Expense(
             expense_id=expense_id,
             timestamp=expense_timestamp,
@@ -40,7 +49,7 @@ class AddExpense(BaseTool):
             cost=self.cost,
             concept=self.concept,
             category=self.category,
-            input_method=self.input_method,
+            input_method="bot",
             is_recurring=False,
             details=self.details,
             payment_method=self.payment_method,

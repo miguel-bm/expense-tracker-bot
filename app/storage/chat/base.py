@@ -13,3 +13,7 @@ class ChatStorageInterface(ABC):
     @abstractmethod
     async def get_messages(self) -> list[ChatCompletionMessageParam]:
         pass
+
+    @abstractmethod
+    async def clear(self) -> None:
+        pass

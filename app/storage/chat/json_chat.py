@@ -22,11 +22,16 @@ class JsonChatStorage(ChatStorageInterface):
     ) -> list[ChatCompletionMessageParam]:
         messages = await self.get_messages()
         messages.append(message)
-        content_str = json.dumps(messages, indent=2)
-        await asyncio.to_thread(self.file_path.write_text, content_str)
+        content_str = json.dumps(messages, indent=2, ensure_ascii=False)
+        await asyncio.to_thread(
+            self.file_path.write_text, content_str, encoding="utf-8"
+        )
         return messages
 
     async def get_messages(self) -> List[ChatCompletionMessageParam]:
         content = await asyncio.to_thread(self.file_path.read_text)
         messages_data = json.loads(content)
         return messages_data
+
+    async def clear(self) -> None:
+        self.file_path.write_text("[]")

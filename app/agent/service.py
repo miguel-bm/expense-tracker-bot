@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -18,16 +19,22 @@ from openai.types.chat.chat_completion_user_message_param import (
 
 from app.agent.tools.add_expense.tool import AddExpense
 from app.agent.tools.base import BaseTool, ResponseContext, get_tool_instance
+from app.agent.tools.edit_expense.tool import EditExpense
+from app.agent.tools.query_expenses.tool import QueryExpenses
 from app.storage.chat.base import ChatStorageInterface
 from app.storage.expenses.base import ExpenseStorageInterface
 from app.utils.config import settings
 from app.utils.logger import logger
 
-TOOLS: list[type[BaseTool]] = [AddExpense]
+TOOLS: list[type[BaseTool]] = [AddExpense, EditExpense, QueryExpenses]
 TOOL_MAP = {str(tool_class.__name__): tool_class for tool_class in TOOLS}
 CATEGORIES_PATH = "categories.yml"
+SPECIAL_INSTRUCTIONS_PATH = "category_instructions.txt"
+
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompt.jinja2"
 SYSTEM_PROMPT_TEMPLATE = Template(SYSTEM_PROMPT_PATH.read_text())
+
+SPECIAL_INSTRUCTIONS = Path(SPECIAL_INSTRUCTIONS_PATH).read_text()
 
 
 class AgentService:
@@ -59,11 +66,13 @@ class AgentService:
         categories: dict[str, dict | None] = yaml.safe_load(
             Path(CATEGORIES_PATH).read_text()
         )
-        categories_str = "\n".join(self._get_categories_str(categories))
         content = SYSTEM_PROMPT_TEMPLATE.render(
             language=settings.DEFAULT_LANGUAGE,
             currency=settings.DEFAULT_CURRENCY,
-            categories=categories_str,
+            categories="\n".join(self._get_categories_str(categories)),
+            special_instructions=SPECIAL_INSTRUCTIONS,
+            expenses=(await self.expense_storage.get_expenses())[-20:],
+            now=datetime.now(timezone.utc),
         )
         return ChatCompletionSystemMessageParam(content=content, role="system")
 
