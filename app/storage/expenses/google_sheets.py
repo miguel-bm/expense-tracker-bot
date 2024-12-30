@@ -57,19 +57,19 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
         records = self._expenses_worksheet.get_all_records(head=1)
         logger.info(f"Found {len(records)} records")
         self._expenses_cache = [self._record_to_expense(record) for record in records]
-        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=True)
+        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def add_expense(self, expense: Expense) -> None:
         row = self._expense_to_row(expense)
         self._expenses_worksheet.append_row(row)
         self._expenses_cache.append(expense)
-        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=True)
+        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def add_expenses(self, expenses: list[Expense]) -> None:
         rows = [self._expense_to_row(expense) for expense in expenses]
         self._expenses_worksheet.append_rows(rows)
         self._expenses_cache.extend(expenses)
-        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=True)
+        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def update_expense(self, expense: Expense) -> None:
         cell = self._expenses_worksheet.find(expense.expense_id, in_column=1)

@@ -139,7 +139,7 @@ async def handle_file_message(
     try:
         await update.message.reply_text("Processing file...")
         movements = process_tabular_file(file_bytes, file_extension)
-        movements.sort(key=lambda x: x.min_date, reverse=True)
+        movements = sorted(movements, key=lambda x: x.min_date, reverse=False)
         new_expenses_or_incomes = await process_movements(
             movements, username, expense_storage, income_storage, openai_client
         )
@@ -161,6 +161,6 @@ async def handle_file_message(
         1 for e in new_expenses_or_incomes if e.category == ["other"]
     )
     await update.message.reply_text(
-        f"I've processed the file and added the movements to your expenses and incomes. There were {len(movements)} movements in the file, of which {num_new_expenses} were new expenses and {num_new_incomes} were new incomes. There were {num_classified_as_other} movements that I could not classify and I advised you to classify them manually in the Google Sheet."
+        f"I've processed the file and added the movements to your expenses and incomes. There were {len(movements)} movements in the file, of which {num_new_expenses} were new expenses and {num_new_incomes} were new incomes. There were {num_classified_as_other} movements that I could not classify and I advise you to classify them manually in the Google Sheet."
     )
     return

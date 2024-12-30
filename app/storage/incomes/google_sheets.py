@@ -57,19 +57,19 @@ class GSpreadIncomeStorage(IncomeStorageInterface):
         records = self._incomes_worksheet.get_all_records(head=1)
         logger.info(f"Found {len(records)} records")
         self._incomes_cache = [self._record_to_income(record) for record in records]
-        self._incomes_cache.sort(key=lambda x: x.timestamp, reverse=True)
+        self._incomes_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def add_income(self, income: Income) -> None:
         row = self._income_to_row(income)
         self._incomes_worksheet.append_row(row)
         self._incomes_cache.append(income)
-        self._incomes_cache.sort(key=lambda x: x.timestamp, reverse=True)
+        self._incomes_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def add_incomes(self, incomes: list[Income]) -> None:
         rows = [self._income_to_row(income) for income in incomes]
         self._incomes_worksheet.append_rows(rows)
         self._incomes_cache.extend(incomes)
-        self._incomes_cache.sort(key=lambda x: x.timestamp, reverse=True)
+        self._incomes_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def update_income(self, income: Income) -> None:
         cell = self._incomes_worksheet.find(income.income_id, in_column=1)
