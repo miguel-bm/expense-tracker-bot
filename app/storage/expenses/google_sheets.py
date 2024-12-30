@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from gspread.auth import service_account
 
@@ -38,7 +39,9 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
     def _record_to_expense(cls, record: dict) -> Expense:
         return Expense(
             expense_id=str(record["expense_id"]),
-            timestamp=datetime.strptime(str(record["timestamp"]), "%d/%m/%Y %H:%M:%S"),
+            timestamp=datetime.strptime(
+                str(record["timestamp"]), "%d/%m/%Y %H:%M:%S"
+            ).replace(tzinfo=ZoneInfo("Europe/Madrid")),
             sender=str(record["sender"]),
             cost=float(record["cost"]),
             concept=str(record["concept"]),

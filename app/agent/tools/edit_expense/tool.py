@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from app.agent.tools.base import BaseTool, ResponseContext
 from app.models.expense import Expense
@@ -26,7 +27,9 @@ class EditExpense(BaseTool):
             return f"Expense with id {self.expense_id} not found"
 
         expense_timestamp = (
-            datetime.fromisoformat(self.timestamp)
+            datetime.fromisoformat(self.timestamp).replace(
+                tzinfo=ZoneInfo("Europe/Madrid")
+            )
             if self.timestamp
             else expense.timestamp
         )

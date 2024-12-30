@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 import yaml
 from jinja2 import Template
@@ -225,7 +226,9 @@ async def process_movements(
             if movement.amount <= 0:
                 new_expense = Expense(
                     expense_id=movement.movement_id,
-                    timestamp=datetime.combine(movement.min_date, datetime.min.time()),
+                    timestamp=datetime.combine(
+                        movement.min_date, datetime.min.time()
+                    ).replace(tzinfo=ZoneInfo("Europe/Madrid")),
                     sender=sender,
                     cost=-movement.amount,
                     concept=classification.concept,
@@ -240,7 +243,9 @@ async def process_movements(
             else:
                 new_income = Income(
                     income_id=movement.movement_id,
-                    timestamp=datetime.combine(movement.min_date, datetime.min.time()),
+                    timestamp=datetime.combine(
+                        movement.min_date, datetime.min.time()
+                    ).replace(tzinfo=ZoneInfo("Europe/Madrid")),
                     sender=sender,
                     value=movement.amount,
                     concept=classification.concept,

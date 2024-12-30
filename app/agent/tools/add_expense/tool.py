@@ -1,6 +1,7 @@
 import hashlib
 from datetime import datetime, timezone
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import Field
 
@@ -36,9 +37,11 @@ class AddExpense(BaseTool):
 
     async def call(self, response_context: ResponseContext) -> str:
         expense_timestamp = (
-            datetime.fromisoformat(self.timestamp)
+            datetime.fromisoformat(self.timestamp).replace(
+                tzinfo=ZoneInfo("Europe/Madrid")
+            )
             if self.timestamp
-            else datetime.now(timezone.utc)
+            else datetime.now(timezone.utc).astimezone(ZoneInfo("Europe/Madrid"))
         )
         expense_id = self._generate_expense_id(expense_timestamp)
         expense = Expense(

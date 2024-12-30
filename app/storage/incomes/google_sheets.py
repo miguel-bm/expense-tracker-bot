@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from gspread.auth import service_account
 
@@ -38,7 +39,9 @@ class GSpreadIncomeStorage(IncomeStorageInterface):
     def _record_to_income(cls, record: dict) -> Income:
         return Income(
             income_id=str(record["income_id"]),
-            timestamp=datetime.strptime(str(record["timestamp"]), "%d/%m/%Y %H:%M:%S"),
+            timestamp=datetime.strptime(
+                str(record["timestamp"]), "%d/%m/%Y %H:%M:%S"
+            ).replace(tzinfo=ZoneInfo("Europe/Madrid")),
             sender=str(record["sender"]),
             value=float(record["value"]),
             concept=str(record["concept"]),
