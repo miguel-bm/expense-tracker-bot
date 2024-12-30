@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     DEFAULT_CURRENCY: str
     DEFAULT_LANGUAGE: str
+    USER_MAPPING_FILE: str = "user_mapping.json"
 
     model_config = SettingsConfigDict(
         extra="ignore",

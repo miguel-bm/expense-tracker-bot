@@ -33,8 +33,14 @@ ENV/
 # Google Sheets
 credentials.json
 
-# Chat history
+# Database files
 chat_history.json
+
+# Example files
+example_files/*
+
+# Config files
+user_mapping.json
 
 # Logs
 *.log

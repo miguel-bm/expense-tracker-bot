@@ -29,7 +29,10 @@ chat_storage = JsonChatStorage()
 agent_service = AgentService(openai_client, expense_storage, chat_storage)
 scheduler = AsyncIOScheduler()
 telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
-user_mapping = json.loads(Path("user_mapping.json").read_text())
+if Path(settings.USER_MAPPING_FILE).exists():
+    user_mapping = json.loads(Path(settings.USER_MAPPING_FILE).read_text())
+else:
+    user_mapping = {}
 
 # Add global objects to bot data
 telegram_app.bot_data["openai"] = openai_client
