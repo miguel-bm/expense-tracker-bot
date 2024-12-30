@@ -2,13 +2,19 @@ from io import BytesIO
 from typing import Literal
 
 import xlrd
+from openai import AsyncOpenAI
 from openpyxl import load_workbook
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from app.bot.utils import filter_message, send_typing_action
+from app.models.expense import Expense
+from app.models.income import Income
 from app.models.movement import Movement
+from app.storage.expenses.base import ExpenseStorageInterface
+from app.storage.incomes.base import IncomeStorageInterface
 from app.utils.logger import logger
+from app.utils.movement_classifier.main import process_movements
 
 
 def process_bbva(file_bytes: bytes) -> list[Movement]:
@@ -101,14 +107,17 @@ async def handle_file_message(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     assert update.message and update.message.document
+    user_mapping: dict[str, str] = context.bot_data["user_mapping"]
+    expense_storage: ExpenseStorageInterface = context.bot_data["expense_storage"]
+    income_storage: IncomeStorageInterface = context.bot_data["income_storage"]
+    openai_client: AsyncOpenAI = context.bot_data["openai"]
 
-    from_user = update.message.from_user
-    username = from_user.username if from_user else "unknown"
     file = update.message.document
+    from_user = update.message.from_user
+    username = from_user.username if from_user and from_user.username else "unknown"
+    username = user_mapping.get(username or "", username)
 
     logger.info(f"Received file from {username}: {file.file_name}")
-
-    # Get file extension and download file
 
     if file.file_name is None:
         await update.message.reply_text(
@@ -127,19 +136,31 @@ async def handle_file_message(
         )
         return
 
-    movements = process_tabular_file(file_bytes, file_extension)
+    try:
+        await update.message.reply_text("Processing file...")
+        movements = process_tabular_file(file_bytes, file_extension)
+        movements.sort(key=lambda x: x.min_date, reverse=True)
+        new_expenses_or_incomes = await process_movements(
+            movements, username, expense_storage, income_storage, openai_client
+        )
+    except Exception as e:
+        logger.exception(f"Error processing file: {str(e)}")
+        await update.message.reply_text(
+            f"Sorry, I couldn't process this file because something went wrong: {str(e)}"
+        )
+        return
+
     logger.info(f"Processed {len(movements)} movements")
+    num_new_expenses = sum(
+        1 for expense in new_expenses_or_incomes if isinstance(expense, Expense)
+    )
+    num_new_incomes = sum(
+        1 for income in new_expenses_or_incomes if isinstance(income, Income)
+    )
+    num_classified_as_other = sum(
+        1 for e in new_expenses_or_incomes if e.category == ["other"]
+    )
+    await update.message.reply_text(
+        f"I've processed the file and added the movements to your expenses and incomes. There were {len(movements)} movements in the file, of which {num_new_expenses} were new expenses and {num_new_incomes} were new incomes. There were {num_classified_as_other} movements that I could not classify and I advised you to classify them manually in the Google Sheet."
+    )
     return
-
-
-# if __name__ == "__main__":
-#     imagin_file_path = "tests/Movimientos_cuenta_0096303 (8).xls"
-#     imagin_bytes = open(imagin_file_path, "rb").read()
-#     print("Read bytes for imagin file")
-#     imagin_movements = process_tabular_file(imagin_bytes, "xls")
-#     print(imagin_movements[0])
-
-#     bbva_file_path = "tests/2024Y-12M-27D-13_42_25-Últimos movimientos.xlsx"
-#     bbva_bytes = open(bbva_file_path, "rb").read()
-#     bbva_movements = process_tabular_file(bbva_bytes, "xlsx")
-#     print(bbva_movements[0])

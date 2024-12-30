@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "role": "user",
+    "content": "20,50 en gasolina con tarjeta",
+    "name": "Miguel"
+  },
+  {
+    "content": null,
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": [
+      {
+        "id": "call_Dx3eThXBEamHQX2VBAc1txyp",
+        "function": {
+          "arguments": "{\"timestamp\":null,\"sender\":\"Miguel\",\"cost\":20.5,\"concept\":\"Gasolina\",\"category\":[\"transportation\",\"vehicle\",\"fuel\"],\"payment_method\":\"card\",\"details\":null,\"tags\":null,\"metadata\":null}",
+          "name": "AddExpense"
+        },
+        "type": "function"
+      }
+    ]
+  },
+  {
+    "content": "Expense created successfully with id 8fd314a4",
+    "role": "tool",
+    "tool_call_id": "call_Dx3eThXBEamHQX2VBAc1txyp"
+  },
+  {
+    "content": "Añadido gasto con tarjeta de crédito de 20.50€ en `transportation/vehicle/fuel` con concepto **Gasolina**.",
+    "refusal": null,
+    "role": "assistant",
+    "audio": null,
+    "function_call": null,
+    "tool_calls": null
+  }
+]

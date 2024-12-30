@@ -6,6 +6,7 @@ from gspread.auth import service_account
 from app.models.expense import Expense
 from app.storage.expenses.base import ExpenseStorageInterface
 from app.utils.config import settings
+from app.utils.logger import logger
 
 SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 
@@ -14,7 +15,7 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
     def __init__(self):
         self._client = service_account(settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE])
         self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
-        self._expenses_worksheet = self._sheet.worksheet("expenses")
+        self._expenses_worksheet = self._sheet.worksheet(settings.EXPENSES_SHEET_NAME)
         self.reload_cache()
 
     @classmethod
@@ -52,14 +53,23 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
         )
 
     def reload_cache(self) -> None:
-        records = self._expenses_worksheet.get_all_records()
+        logger.info("Reloading expenses cache")
+        records = self._expenses_worksheet.get_all_records(head=1)
+        logger.info(f"Found {len(records)} records")
         self._expenses_cache = [self._record_to_expense(record) for record in records]
+        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=True)
 
     async def add_expense(self, expense: Expense) -> None:
         row = self._expense_to_row(expense)
         self._expenses_worksheet.append_row(row)
-        if self._expenses_cache:
-            self._expenses_cache.append(expense)
+        self._expenses_cache.append(expense)
+        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=True)
+
+    async def add_expenses(self, expenses: list[Expense]) -> None:
+        rows = [self._expense_to_row(expense) for expense in expenses]
+        self._expenses_worksheet.append_rows(rows)
+        self._expenses_cache.extend(expenses)
+        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=True)
 
     async def update_expense(self, expense: Expense) -> None:
         cell = self._expenses_worksheet.find(expense.expense_id, in_column=1)

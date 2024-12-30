@@ -23,12 +23,13 @@ from app.agent.tools.edit_expense.tool import EditExpense
 from app.agent.tools.query_expenses.tool import QueryExpenses
 from app.storage.chat.base import ChatStorageInterface
 from app.storage.expenses.base import ExpenseStorageInterface
+from app.utils.categories import get_categories_str
 from app.utils.config import settings
 from app.utils.logger import logger
 
 TOOLS: list[type[BaseTool]] = [AddExpense, EditExpense, QueryExpenses]
 TOOL_MAP = {str(tool_class.__name__): tool_class for tool_class in TOOLS}
-CATEGORIES_PATH = "categories.yml"
+CATEGORIES_PATH = "expense_categories.yml"
 SPECIAL_INSTRUCTIONS_PATH = "category_instructions.txt"
 
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompt.jinja2"
@@ -49,17 +50,6 @@ class AgentService:
         self.chat_storage = chat_storage
         self.tool_schemas = [pydantic_function_tool(tool_class) for tool_class in TOOLS]
 
-    @classmethod
-    def _get_categories_str(
-        cls, categories: dict[str, dict | None], indent: int = 0
-    ) -> list[str]:
-        lines = []
-        for category, subcategories in categories.items():
-            lines.append(f"{indent * '  '}- {category}")
-            if subcategories:
-                lines.extend(cls._get_categories_str(subcategories, indent + 1))
-        return lines
-
     async def _get_system_message(
         self, response_context: ResponseContext
     ) -> ChatCompletionSystemMessageParam:
@@ -69,7 +59,7 @@ class AgentService:
         content = SYSTEM_PROMPT_TEMPLATE.render(
             language=settings.DEFAULT_LANGUAGE,
             currency=settings.DEFAULT_CURRENCY,
-            categories="\n".join(self._get_categories_str(categories)),
+            categories=get_categories_str(categories),
             special_instructions=SPECIAL_INSTRUCTIONS,
             expenses=(await self.expense_storage.get_expenses())[-20:],
             now=datetime.now(timezone.utc),

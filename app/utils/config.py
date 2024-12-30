@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     TELEGRAM_CHAT_ID: int
     GOOGLE_SHEETS_CREDENTIALS: str
     EXPENSES_SHEET_ID: str
+    INCOMES_SHEET_ID: str
+    EXPENSES_SHEET_NAME: str = "expenses"
+    INCOMES_SHEET_NAME: str = "incomes"
     OPENAI_API_KEY: str
     DEFAULT_CURRENCY: str
     DEFAULT_LANGUAGE: str

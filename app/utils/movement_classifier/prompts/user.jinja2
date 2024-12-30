@@ -1,0 +1,5 @@
+The list of movements to classify is the following:
+
+{% for movement in movements %}
+- ID {{ movement.movement_id }}: DATE {{ movement.date_ }} - AMOUNT {{ movement.amount }} - STATEMENT TEXT {{ movement.description }}
+{% endfor %}

@@ -10,9 +10,13 @@ class ExpenseStorageInterface(ABC):
         pass
 
     @abstractmethod
+    async def add_expenses(self, expenses: list[Expense]) -> None:
+        pass
+
+    @abstractmethod
     async def update_expense(self, expense: Expense) -> None:
         pass
 
     @abstractmethod
-    async def get_expenses(self) -> List[Expense]:
+    async def get_expenses(self, force_reload: bool = False) -> List[Expense]:
         pass

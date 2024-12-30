@@ -1,0 +1,36 @@
+employment:
+  salary:
+  benefits:
+  reimbursements:
+
+investments:
+  dividends:
+  interest:
+  capital_gains:
+  rental_income:
+  royalties:
+  cryptocurrency:
+
+freelance:
+  consulting:
+  contract_work:
+  gig_economy:
+  content_creation:
+
+government:
+  tax_returns:
+  benefits:
+    unemployment:
+    disability:
+    social_security:
+    veterans:
+  grants:
+  stimulus:
+
+gifts:
+  inheritance:
+  monetary_gifts:
+  prizes:
+  awards:
+
+other:

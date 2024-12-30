@@ -16,6 +16,7 @@ from app.bot import setup_handlers
 from app.scheduler import setup_schedules
 from app.storage.chat.json_chat import JsonChatStorage
 from app.storage.expenses.google_sheets import GSpreadExpenseStorage
+from app.storage.incomes.google_sheets import GSpreadIncomeStorage
 from app.utils.config import settings
 from app.utils.logger import logger
 
@@ -25,6 +26,7 @@ TELEGRAM_TOKEN = settings.TELEGRAM_BOT_TOKEN
 # Global instances
 openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 expense_storage = GSpreadExpenseStorage()
+income_storage = GSpreadIncomeStorage()
 chat_storage = JsonChatStorage()
 agent_service = AgentService(openai_client, expense_storage, chat_storage)
 scheduler = AsyncIOScheduler()
@@ -37,6 +39,7 @@ else:
 # Add global objects to bot data
 telegram_app.bot_data["openai"] = openai_client
 telegram_app.bot_data["expense_storage"] = expense_storage
+telegram_app.bot_data["income_storage"] = income_storage
 telegram_app.bot_data["chat_storage"] = chat_storage
 telegram_app.bot_data["agent_service"] = agent_service
 telegram_app.bot_data["user_mapping"] = user_mapping
