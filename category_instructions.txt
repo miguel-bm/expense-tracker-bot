@@ -1,2 +1,0 @@
-- "Mercadona", "Ahorramas", "Carrefour", "Lidl", "Aldi" etc son siempre "food/groceries", y en el concepto poner siempre el nombre del establecimiento (por ejemplo "Mercadona")
-- "Repsol", "Cepsa", etc son siempre "transportation/vehicle/fuel", y en el concepto poner siempre el nombre del establecimiento (por ejemplo "Repsol")

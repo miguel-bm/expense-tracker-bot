@@ -41,6 +41,7 @@ example_files/*
 
 # Config files
 user_mapping.json
+category_instructions.txt
 
 # Logs
 *.log
