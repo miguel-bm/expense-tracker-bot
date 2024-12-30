@@ -14,7 +14,5 @@ class Expense(BaseModel):
     details: str | None = None
     payment_method: Literal["cash", "card", "transfer", "p2p"] | None = None
     input_method: Literal["manual", "bot", "form"] = "bot"
-    is_recurring: bool = False
-    receipt_url: str | None = None
     tags: list[str] | None = None
     metadata: dict | None = None

@@ -14,7 +14,7 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
     def __init__(self):
         self._client = service_account(settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE])
         self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
-        self._expenses_worksheet = self._sheet.worksheet("movements")
+        self._expenses_worksheet = self._sheet.worksheet("expenses")
         self.reload_cache()
 
     @classmethod
@@ -29,8 +29,6 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
             expense.details or "",
             expense.payment_method or "",
             expense.input_method,
-            expense.is_recurring,
-            expense.receipt_url or "",
             ",".join(expense.tags) if expense.tags else "",
             json.dumps(expense.metadata) if expense.metadata else "",
         ]
@@ -47,8 +45,6 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
             details=str(record["details"]) or None,
             payment_method=str(record["payment_method"]) or None,  # type: ignore
             input_method=str(record["input_method"]),  # type: ignore
-            is_recurring=str(record["is_recurring"]) == "TRUE",
-            receipt_url=str(record["receipt_url"]) or None,
             tags=str(record["tags"]).split(",") if record["tags"] else None,
             metadata=json.loads(str(record["metadata"]))
             if record["metadata"]

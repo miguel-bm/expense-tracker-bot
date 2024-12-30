@@ -16,7 +16,6 @@ class EditExpense(BaseTool):
     category: list[str] | None = None
     payment_method: Literal["cash", "card", "transfer", "p2p"] | None = None
     details: str | None = None
-    receipt_url: str | None = None
     tags: list[str] | None = None
     metadata: dict | None = None
 
@@ -39,10 +38,8 @@ class EditExpense(BaseTool):
             concept=self.concept or expense.concept,
             category=self.category or expense.category,
             input_method=expense.input_method,
-            is_recurring=expense.is_recurring,
             details=self.details or expense.details,
             payment_method=self.payment_method or expense.payment_method,
-            receipt_url=self.receipt_url or expense.receipt_url,
             tags=self.tags or expense.tags,
             metadata=self.metadata or expense.metadata,
         )

@@ -22,8 +22,6 @@ class QueryExpenses(BaseTool):
         details TEXT,
         payment_method TEXT CHECK (payment_method IN ('cash', 'card', 'transfer') OR payment_method IS NULL),
         input_method TEXT CHECK (input_method IN ('manual', 'bot', 'form')) DEFAULT 'bot',
-        is_recurring BOOLEAN DEFAULT FALSE,
-        receipt_url TEXT,
         tags TEXT,      -- a string like "tag1,tag2,tag3", not an array
         metadata TEXT   -- a JSON string
     );

@@ -21,7 +21,6 @@ class AddExpense(BaseTool):
     category: list[str]
     payment_method: Literal["cash", "card", "transfer", "p2p"]
     details: str | None = None
-    receipt_url: str | None = None
     tags: list[str] | None = None
     metadata: dict | None = None
 
@@ -50,10 +49,8 @@ class AddExpense(BaseTool):
             concept=self.concept,
             category=self.category,
             input_method="bot",
-            is_recurring=False,
             details=self.details,
             payment_method=self.payment_method,
-            receipt_url=self.receipt_url,
             tags=self.tags,
             metadata=self.metadata,
         )
