@@ -1,8 +1,11 @@
 import json
+import time
 from datetime import datetime
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from gspread.auth import service_account
+from requests.exceptions import ConnectionError, RequestException
 
 from app.models.expense import Expense
 from app.storage.expenses.base import ExpenseStorageInterface
@@ -13,6 +16,9 @@ SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 
 
 class GSpreadExpenseStorage(ExpenseStorageInterface):
+    MAX_RETRIES = 3
+    RETRY_DELAY = 1  # seconds
+
     def __init__(self):
         self._client = service_account(settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE])
         self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
@@ -62,26 +68,58 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
         self._expenses_cache = [self._record_to_expense(record) for record in records]
         self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
+    def _execute_with_retry(self, operation: callable, **kargs: Any) -> Any:
+        """Execute a Google Sheets operation with retry logic."""
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                return operation(**kargs)
+            except (ConnectionError, RequestException) as e:
+                if attempt == self.MAX_RETRIES - 1:
+                    logger.error(
+                        f"Failed to execute operation after {self.MAX_RETRIES} attempts: {e}"
+                    )
+                    raise
+                # Try to reconnect to the sheet
+                self._client = service_account(
+                    settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE]
+                )
+                self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
+                self._expenses_worksheet = self._sheet.worksheet(
+                    settings.EXPENSES_SHEET_NAME
+                )
+                self.reload_cache()
+                logger.warning(
+                    f"Operation failed (attempt {attempt + 1}), retrying in {self.RETRY_DELAY}s: {e}"
+                )
+                time.sleep(self.RETRY_DELAY)
+            except Exception as e:
+                logger.error(f"Failed to execute operation: {e}")
+                raise
+
     async def add_expense(self, expense: Expense) -> None:
         row = self._expense_to_row(expense)
-        self._expenses_worksheet.append_row(row)
+        self._execute_with_retry(self._expenses_worksheet.append_row, values=row)
         self._expenses_cache.append(expense)
         self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def add_expenses(self, expenses: list[Expense]) -> None:
         rows = [self._expense_to_row(expense) for expense in expenses]
-        self._expenses_worksheet.append_rows(rows)
+        self._execute_with_retry(self._expenses_worksheet.append_rows, values=rows)
         self._expenses_cache.extend(expenses)
         self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
 
     async def update_expense(self, expense: Expense) -> None:
-        cell = self._expenses_worksheet.find(expense.expense_id, in_column=1)
+        cell = self._execute_with_retry(
+            self._expenses_worksheet.find, query=expense.expense_id, in_column=1
+        )
         if not cell:
             raise ValueError(f"Expense with ID {expense.expense_id} not found")
 
         range_name = f"A{cell.row}:N{cell.row}"
         updated_row = self._expense_to_row(expense)
-        self._expenses_worksheet.update(range_name=range_name, values=[updated_row])
+        self._execute_with_retry(
+            self._expenses_worksheet.update, range_name=range_name, values=[updated_row]
+        )
         for i, expense in enumerate(self._expenses_cache):
             if expense.expense_id == expense.expense_id:
                 self._expenses_cache[i] = expense

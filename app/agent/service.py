@@ -107,7 +107,11 @@ class AgentService:
             )
             tool_instance = get_tool_instance(tool_call, TOOL_MAP)
 
-            tool_result = await tool_instance.call(response_context)
+            try:
+                tool_result = await tool_instance.call(response_context)
+            except Exception as e:
+                logger.error(f"Error calling tool {tool_call.id}: {e}")
+                tool_result = f"Error calling tool {tool_call.id}: {e}"
             logger.info(f"Tool result for {tool_call.id}: {tool_result}")
             tool_message = ChatCompletionToolMessageParam(
                 content=tool_result, role="tool", tool_call_id=tool_call.id

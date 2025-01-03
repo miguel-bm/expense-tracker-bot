@@ -30,21 +30,23 @@ class EditExpense(BaseTool):
             datetime.fromisoformat(self.timestamp).replace(
                 tzinfo=ZoneInfo("Europe/Madrid")
             )
-            if self.timestamp
+            if self.timestamp is not None
             else expense.timestamp
         )
         new_expense = Expense(
             expense_id=self.expense_id,
             timestamp=expense_timestamp,
-            sender=self.sender or expense.sender,
-            cost=self.cost or expense.cost,
-            concept=self.concept or expense.concept,
-            category=self.category or expense.category,
+            sender=self.sender if self.sender is not None else expense.sender,
+            cost=self.cost if self.cost is not None else expense.cost,
+            concept=self.concept if self.concept is not None else expense.concept,
+            category=self.category if self.category is not None else expense.category,
             input_method=expense.input_method,
-            details=self.details or expense.details,
-            payment_method=self.payment_method or expense.payment_method,
-            tags=self.tags or expense.tags,
-            metadata=self.metadata or expense.metadata,
+            details=self.details if self.details is not None else expense.details,
+            payment_method=self.payment_method
+            if self.payment_method is not None
+            else expense.payment_method,
+            tags=self.tags if self.tags is not None else expense.tags,
+            metadata=self.metadata if self.metadata is not None else expense.metadata,
         )
 
         await response_context.storage.update_expense(new_expense)

@@ -6,6 +6,10 @@ from app.models.expense import Expense
 
 class ExpenseStorageInterface(ABC):
     @abstractmethod
+    def reload_cache(self) -> None:
+        pass
+
+    @abstractmethod
     async def add_expense(self, expense: Expense) -> None:
         pass
 

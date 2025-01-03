@@ -5,6 +5,10 @@ from app.models.income import Income
 
 class IncomeStorageInterface(ABC):
     @abstractmethod
+    def reload_cache(self) -> None:
+        pass
+
+    @abstractmethod
     async def add_income(self, income: Income) -> None:
         pass
 
