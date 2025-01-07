@@ -5,7 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    TELEGRAM_BOT_TOKEN: str
+    DEBUG: bool = False
+    TELEGRAM_BOT_TOKEN_PROD: str
+    TELEGRAM_BOT_TOKEN_DEV: str
     TELEGRAM_CHAT_ID: int
     GOOGLE_SHEETS_CREDENTIALS: str
     EXPENSES_SHEET_ID: str
@@ -17,11 +19,20 @@ class Settings(BaseSettings):
     DEFAULT_LANGUAGE: str
     USER_MAPPING_FILE: str = "user_mapping.json"
 
+    # Redis
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int
+
     model_config = SettingsConfigDict(
         extra="ignore",
         env_file=".env",
         env_file_encoding="utf-8",
     )
+
+    @property
+    def TELEGRAM_BOT_TOKEN(self) -> str:
+        return self.TELEGRAM_BOT_TOKEN_DEV if self.DEBUG else self.TELEGRAM_BOT_TOKEN
 
 
 @lru_cache()

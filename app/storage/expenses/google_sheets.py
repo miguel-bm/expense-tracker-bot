@@ -1,32 +1,22 @@
 import json
-import time
 from datetime import datetime
-from typing import Any
 from zoneinfo import ZoneInfo
-
-from gspread.auth import service_account
-from requests.exceptions import ConnectionError, RequestException
 
 from app.models.expense import Expense
 from app.storage.expenses.base import ExpenseStorageInterface
+from app.storage.google_sheets_mixin import GoogleSheetsMixin
 from app.utils.config import settings
-from app.utils.logger import logger
-
-SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 
 
-class GSpreadExpenseStorage(ExpenseStorageInterface):
-    MAX_RETRIES = 3
-    RETRY_DELAY = 1  # seconds
-
+class GSpreadExpenseStorage(GoogleSheetsMixin[Expense], ExpenseStorageInterface):
     def __init__(self):
-        self._client = service_account(settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE])
-        self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
-        self._expenses_worksheet = self._sheet.worksheet(settings.EXPENSES_SHEET_NAME)
-        self.reload_cache()
+        super().__init__(settings.EXPENSES_SHEET_ID, settings.EXPENSES_SHEET_NAME)
 
-    @classmethod
-    def _expense_to_row(cls, expense: Expense) -> list[str | float | bool]:
+    @property
+    def _item_type_name(self) -> str:
+        return "expense"
+
+    def _item_to_row(self, expense: Expense) -> list[str | float | bool]:
         return [
             expense.expense_id,
             expense.timestamp.strftime("%d/%m/%Y %H:%M:%S"),
@@ -41,8 +31,7 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
             json.dumps(expense.metadata) if expense.metadata else "",
         ]
 
-    @classmethod
-    def _record_to_expense(cls, record: dict) -> Expense:
+    def _record_to_item(self, record: dict) -> Expense:
         return Expense(
             expense_id=str(record["expense_id"]),
             timestamp=datetime.strptime(
@@ -61,72 +50,15 @@ class GSpreadExpenseStorage(ExpenseStorageInterface):
             else None,
         )
 
-    def reload_cache(self) -> None:
-        logger.info("Reloading expenses cache")
-        records = self._expenses_worksheet.get_all_records(head=1)
-        logger.info(f"Found {len(records)} records")
-        self._expenses_cache = [self._record_to_expense(record) for record in records]
-        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
-
-    def _execute_with_retry(self, operation: callable, **kargs: Any) -> Any:
-        """Execute a Google Sheets operation with retry logic."""
-        for attempt in range(self.MAX_RETRIES):
-            try:
-                return operation(**kargs)
-            except (ConnectionError, RequestException) as e:
-                if attempt == self.MAX_RETRIES - 1:
-                    logger.error(
-                        f"Failed to execute operation after {self.MAX_RETRIES} attempts: {e}"
-                    )
-                    raise
-                # Try to reconnect to the sheet
-                self._client = service_account(
-                    settings.GOOGLE_SHEETS_CREDENTIALS, [SCOPE]
-                )
-                self._sheet = self._client.open_by_key(settings.EXPENSES_SHEET_ID)
-                self._expenses_worksheet = self._sheet.worksheet(
-                    settings.EXPENSES_SHEET_NAME
-                )
-                self.reload_cache()
-                logger.warning(
-                    f"Operation failed (attempt {attempt + 1}), retrying in {self.RETRY_DELAY}s: {e}"
-                )
-                time.sleep(self.RETRY_DELAY)
-            except Exception as e:
-                logger.error(f"Failed to execute operation: {e}")
-                raise
-
+    # Interface methods that now use the mixin's implementation
     async def add_expense(self, expense: Expense) -> None:
-        row = self._expense_to_row(expense)
-        self._execute_with_retry(self._expenses_worksheet.append_row, values=row)
-        self._expenses_cache.append(expense)
-        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
+        await self.add_item(expense)
 
     async def add_expenses(self, expenses: list[Expense]) -> None:
-        rows = [self._expense_to_row(expense) for expense in expenses]
-        self._execute_with_retry(self._expenses_worksheet.append_rows, values=rows)
-        self._expenses_cache.extend(expenses)
-        self._expenses_cache.sort(key=lambda x: x.timestamp, reverse=False)
+        await self.add_items(expenses)
 
     async def update_expense(self, expense: Expense) -> None:
-        cell = self._execute_with_retry(
-            self._expenses_worksheet.find, query=expense.expense_id, in_column=1
-        )
-        if not cell:
-            raise ValueError(f"Expense with ID {expense.expense_id} not found")
-
-        range_name = f"A{cell.row}:N{cell.row}"
-        updated_row = self._expense_to_row(expense)
-        self._execute_with_retry(
-            self._expenses_worksheet.update, range_name=range_name, values=[updated_row]
-        )
-        for i, expense in enumerate(self._expenses_cache):
-            if expense.expense_id == expense.expense_id:
-                self._expenses_cache[i] = expense
-                break
+        await self.update_item(expense, "expense_id")
 
     async def get_expenses(self, force_reload: bool = False) -> list[Expense]:
-        if not force_reload:
-            return self._expenses_cache
-        self.reload_cache()
-        return self._expenses_cache
+        return await self.get_items(force_reload)
