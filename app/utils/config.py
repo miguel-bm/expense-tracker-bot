@@ -32,7 +32,9 @@ class Settings(BaseSettings):
 
     @property
     def TELEGRAM_BOT_TOKEN(self) -> str:
-        return self.TELEGRAM_BOT_TOKEN_DEV if self.DEBUG else self.TELEGRAM_BOT_TOKEN
+        return (
+            self.TELEGRAM_BOT_TOKEN_DEV if self.DEBUG else self.TELEGRAM_BOT_TOKEN_PROD
+        )
 
 
 @lru_cache()

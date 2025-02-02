@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import BytesIO
 from typing import Literal
 
@@ -17,6 +18,16 @@ from app.utils.logger import logger
 from app.utils.movement_classifier.main import process_movements
 
 
+def value_to_date(value: str | float | int | datetime) -> datetime:
+    if isinstance(value, datetime):
+        return value
+    elif isinstance(value, float):
+        raise ValueError("Float is not a valid date")
+    elif isinstance(value, int):
+        raise ValueError("Int is not a valid date")
+    return datetime.strptime(value, "%d/%m/%Y")
+
+
 def process_bbva(file_bytes: bytes) -> list[Movement]:
     wb = load_workbook(filename=BytesIO(file_bytes))
     sheet = wb.worksheets[0]
@@ -29,10 +40,12 @@ def process_bbva(file_bytes: bytes) -> list[Movement]:
         movement_str = str(sheet.cell(row=row, column=5).value)
         observations = str(sheet.cell(row=row, column=10).value)
         text = f"{concept}; {movement_str}; {observations}"
+        date_ = value_to_date(sheet.cell(row=row, column=2).value)  # type: ignore
+        date_value = value_to_date(sheet.cell(row=row, column=3).value)  # type: ignore
         movements.append(
             Movement(
-                date_=sheet.cell(row=row, column=2).value.date(),  # type: ignore
-                date_value=sheet.cell(row=row, column=3).value.date(),  # type: ignore
+                date_=date_,
+                date_value=date_value,
                 description=text,
                 amount=float(sheet.cell(row=row, column=6).value or 0.0),  # type: ignore
                 balance=float(sheet.cell(row=row, column=8).value or 0.0),  # type: ignore
