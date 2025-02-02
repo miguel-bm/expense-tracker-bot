@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import BytesIO
-from typing import Literal
+from typing import Any, Literal
 
 import xlrd
 from openai import AsyncOpenAI
@@ -18,14 +18,30 @@ from app.utils.logger import logger
 from app.utils.movement_classifier.main import process_movements
 
 
-def value_to_date(value: str | float | int | datetime) -> datetime:
+def value_to_date(value: Any) -> datetime:
     if isinstance(value, datetime):
         return value
     elif isinstance(value, float):
         raise ValueError("Float is not a valid date")
     elif isinstance(value, int):
         raise ValueError("Int is not a valid date")
-    return datetime.strptime(value, "%d/%m/%Y")
+    try:
+        return datetime.strptime(value, "%d/%m/%Y")
+    except ValueError:
+        # Fall back to 2-digit year
+        try:
+            return datetime.strptime(value, "%d/%m/%y")
+        except ValueError:
+            raise ValueError(f"Invalid date format: {value}")
+
+
+def read_eur_currency_amount(value: Any) -> float:
+    value_str = str(value).strip()
+    if value_str.endswith("EUR"):
+        value_str = value_str[:-3]
+    value_str = value_str.replace(".", "")
+    value_str = value_str.replace(",", ".")
+    return float(value_str)
 
 
 def process_bbva(file_bytes: bytes) -> list[Movement]:
@@ -40,8 +56,8 @@ def process_bbva(file_bytes: bytes) -> list[Movement]:
         movement_str = str(sheet.cell(row=row, column=5).value)
         observations = str(sheet.cell(row=row, column=10).value)
         text = f"{concept}; {movement_str}; {observations}"
-        date_ = value_to_date(sheet.cell(row=row, column=2).value)  # type: ignore
-        date_value = value_to_date(sheet.cell(row=row, column=3).value)  # type: ignore
+        date_ = value_to_date(sheet.cell(row=row, column=2).value)
+        date_value = value_to_date(sheet.cell(row=row, column=3).value)
         movements.append(
             Movement(
                 date_=date_,
@@ -56,7 +72,7 @@ def process_bbva(file_bytes: bytes) -> list[Movement]:
     return movements
 
 
-def process_imagin(file_bytes: bytes) -> list[Movement]:
+def process_caixabank(file_bytes: bytes) -> list[Movement]:
     wb: xlrd.book.Book = xlrd.open_workbook(file_contents=file_bytes)
     sheet: xlrd.sheet.Sheet = wb.sheet_by_index(0)
     movements = []
@@ -86,6 +102,31 @@ def process_imagin(file_bytes: bytes) -> list[Movement]:
     return movements
 
 
+def process_imagin(file_bytes: bytes) -> list[Movement]:
+    wb = load_workbook(filename=BytesIO(file_bytes))
+    sheet = wb.worksheets[0]
+    movements = []
+
+    row = 4
+    while sheet.cell(row=row, column=1).value:
+        description = str(sheet.cell(row=row, column=1).value)
+        date_ = value_to_date(sheet.cell(row=row, column=2).value)
+        amount = read_eur_currency_amount(sheet.cell(row=row, column=3).value)
+        balance = read_eur_currency_amount(sheet.cell(row=row, column=4).value)
+        movements.append(
+            Movement(
+                date_=date_,
+                date_value=date_,
+                description=description,
+                amount=amount,
+                balance=balance,
+            )
+        )
+        row += 1
+
+    return movements
+
+
 def discriminate_format(
     file_bytes: bytes, file_extension: str
 ) -> Literal["bbva", "imagin"] | None:
@@ -97,14 +138,18 @@ def discriminate_format(
     return None
 
 
-def process_tabular_file(file_bytes: bytes, file_extension: str) -> list[Movement]:
+def process_tabular_file(
+    file_bytes: bytes, file_extension: str, file_name: str
+) -> list[Movement]:
     """Process tabular files (XLS, XLSX) and return movements."""
     try:
         file_format = discriminate_format(file_bytes, file_extension)
 
         if file_format == "imagin":
-            return process_imagin(file_bytes)
+            return process_caixabank(file_bytes)
         elif file_format == "bbva":
+            if file_name.startswith("Movimientos "):
+                return process_imagin(file_bytes)
             return process_bbva(file_bytes)
         else:
             raise ValueError("Unsupported file format")
@@ -139,6 +184,7 @@ async def handle_file_message(
         return
 
     file_extension = file.file_name.lower().split(".")[-1]
+    file_name = file.file_name
     file_content = await file.get_file()
     file_bytes = await file_content.download_as_bytearray()
 
@@ -151,7 +197,7 @@ async def handle_file_message(
 
     try:
         await update.message.reply_text("Processing file...")
-        movements = process_tabular_file(file_bytes, file_extension)
+        movements = process_tabular_file(file_bytes, file_extension, file_name)
         movements = sorted(movements, key=lambda x: x.min_date, reverse=False)
         new_expenses_or_incomes = await process_movements(
             movements, username, expense_storage, income_storage, openai_client
@@ -174,6 +220,8 @@ async def handle_file_message(
         1 for e in new_expenses_or_incomes if e.category == ["other"]
     )
     await update.message.reply_text(
-        f"I've processed the file and added the movements to your expenses and incomes. There were {len(movements)} movements in the file, of which {num_new_expenses} were new expenses and {num_new_incomes} were new incomes. There were {num_classified_as_other} movements that I could not classify and I advise you to classify them manually in the Google Sheet."
+        f"I've processed the file and added the movements to your expenses and incomes. "
+        f"There were {len(movements)} movements in the file, of which {num_new_expenses} were new expenses and {num_new_incomes} were new incomes. "
+        f"There were {num_classified_as_other} movements that I could not classify and I advise you to classify them manually in the Google Sheet."
     )
     return
