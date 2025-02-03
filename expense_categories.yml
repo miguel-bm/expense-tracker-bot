@@ -45,6 +45,9 @@ healthcare:
     gym:
     sports:
     equipment:
+  vision:
+  dental:
+  hearing:
 
 personal_care:
   haircut:
@@ -60,6 +63,7 @@ finance:
   taxes:
   fees:
   credit_card:
+  atm:
 
 entertainment:
   streaming:
